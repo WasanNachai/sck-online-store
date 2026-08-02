@@ -3,9 +3,36 @@ package cart_test
 import (
 	"context"
 	"store-service/internal/cart"
+	"store-service/internal/point"
 
 	"github.com/stretchr/testify/mock"
 )
+
+type mockPointInterface struct {
+	mock.Mock
+}
+
+func (mock *mockPointInterface) CalculateEarnedPoints(
+	ctx context.Context,
+	amountTHB float64,
+) (int, error) {
+	return int(amountTHB / 50), nil
+}
+
+func (mock *mockPointInterface) TotalPoint(ctx context.Context, uid int) (point.TotalPoint, error) {
+	argument := mock.Called(ctx, uid)
+	return argument.Get(0).(point.TotalPoint), argument.Error(1)
+}
+
+func (mock *mockPointInterface) DeductPoint(ctx context.Context, uid int, submitedPoint point.SubmitedPoint) (point.TotalPoint, error) {
+	argument := mock.Called(ctx, uid, submitedPoint)
+	return argument.Get(0).(point.TotalPoint), argument.Error(1)
+}
+
+func (mock *mockPointInterface) CheckBurnPoint(ctx context.Context, uid int, amount int) (bool, error) {
+	argument := mock.Called(ctx, uid, amount)
+	return argument.Bool(0), argument.Error(1)
+}
 
 type mockCartRepository struct {
 	mock.Mock

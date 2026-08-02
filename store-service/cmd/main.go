@@ -10,6 +10,7 @@ import (
 	"store-service/cmd/api"
 	"store-service/internal/auth"
 	"store-service/internal/cart"
+	"store-service/internal/common"
 	"store-service/internal/healthcheck"
 	"store-service/internal/metrics"
 	"store-service/internal/middleware"
@@ -77,6 +78,7 @@ func main() {
 	shippingGatewayEndpoint := "thirdparty:8883"
 	pointGatewayEndpoint := "point-service:8001"
 	storeWebEndpoint := "http://localhost:3000"
+	fxRateAPI := "https://api.frankfurter.app/latest?from=USD&to=THB"
 
 	if os.Getenv("BANK_GATEWAY") != "" {
 		bankGatewayEndpoint = os.Getenv("BANK_GATEWAY")
@@ -89,6 +91,9 @@ func main() {
 	}
 	if os.Getenv("STORE_WEB_HOST") != "" {
 		storeWebEndpoint = os.Getenv("STORE_WEB_HOST")
+	}
+	if os.Getenv("FX_RATE_API") != "" {
+		fxRateAPI = os.Getenv("FX_RATE_API")
 	}
 
 	dbConnection := "user:password@(localhost:3306)/store?parseTime=True"
@@ -145,6 +150,7 @@ func main() {
 	pointGateway := point.PointGateway{
 		PointEndpoint: "http://" + pointGatewayEndpoint,
 	}
+	currencyService := common.NewCurrencyService(fxRateAPI, 6*time.Hour)
 
 	PDFHelper := order.OrderSummaryPDFGenerator{}
 	orderHelper := order.OrderHelper{}
@@ -161,9 +167,11 @@ func main() {
 	cartService := cart.CartService{
 		CartRepository: &cartRepository,
 		PointService:   &pointService,
+		CurrencyService: currencyService,
 	}
 	productService := product.ProductService{
 		ProductRepository: &productRepository,
+		CurrencyService:   currencyService,
 	}
 	orderService := order.OrderService{
 		CartRepository:     cartRepository,
@@ -175,6 +183,7 @@ func main() {
 		PDFHelper:          PDFHelper,
 		OrderHelper:        orderHelper,
 		Clock:              time.Now,
+		CurrencyService:    currencyService,
 	}
 	authService := auth.AuthService{
 		UserRepository:  userRepository,

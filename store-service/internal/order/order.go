@@ -37,6 +37,7 @@ type OrderService struct {
 	PDFHelper          PDFHelper
 	OrderHelper        OrderHelperInterface
 	Clock              func() time.Time
+	CurrencyService    common.CurrencyInterface
 }
 
 type CartRepository interface {
@@ -83,8 +84,8 @@ func (orderService OrderService) CreateOrder(ctx context.Context, uid int, submi
 		subtotalPrice = subtotalPrice + (product.Price * float64(productSelected.Quantity))
 	}
 
-	subtotalPriceTHB := common.ConvertToThb(subtotalPrice).LongDecimal
-	discountPriceTHB := common.ConvertToThb(submitedOrder.DiscountPrice).LongDecimal
+	subtotalPriceTHB := orderService.CurrencyService.ConvertToThb(ctx, subtotalPrice).LongDecimal
+	discountPriceTHB := orderService.CurrencyService.ConvertToThb(ctx, submitedOrder.DiscountPrice).LongDecimal
 	totalPriceTHB := subtotalPriceTHB - discountPriceTHB
 
 	shippingDetail, _ := orderService.ShippingRepository.GetShippingMethodByID(ctx, submitedOrder.ShippingMethodID)
@@ -241,8 +242,8 @@ func (orderService OrderService) GetOrderSummary(ctx context.Context, orderNumbe
 	for _, orderProduct := range orderedProducts {
 		totalPrice := orderProduct.Price * float64(orderProduct.Quantity)
 
-		totalPriceTHB := common.ConvertToThb(totalPrice)
-		priceTHB := common.ConvertToThb(orderProduct.Price)
+		totalPriceTHB := orderService.CurrencyService.ConvertToThb(ctx, totalPrice)
+		priceTHB := orderService.CurrencyService.ConvertToThb(ctx, orderProduct.Price)
 		product := OrderSummaryProduct{
 			ProductBrand:  orderProduct.ProductBrand,
 			ProductName:   orderProduct.ProductName,

@@ -14,6 +14,7 @@ type ProductInterface interface {
 
 type ProductService struct {
 	ProductRepository ProductRepository
+	CurrencyService   common.CurrencyInterface
 }
 
 func (productService ProductService) GetProducts(ctx context.Context, keyword string, limit string, offset string) (ProductResult, error) {
@@ -25,7 +26,7 @@ func (productService ProductService) GetProducts(ctx context.Context, keyword st
 
 	for i := range res.Products {
 		p := &res.Products[i]
-		digit := common.ConvertToThb(p.Price)
+		digit := productService.CurrencyService.ConvertToThb(ctx, p.Price)
 
 		p.PriceTHB = digit.ShortDecimal
 		p.PriceFullTHB = digit.LongDecimal
@@ -46,7 +47,7 @@ func (productService ProductService) GetProductByID(ctx context.Context, ID int)
 	}
 
 	p := &productDetail
-	digit := common.ConvertToThb(p.Price)
+	digit := productService.CurrencyService.ConvertToThb(ctx, p.Price)
 
 	p.PriceTHB = digit.ShortDecimal
 	p.PriceFullTHB = digit.LongDecimal

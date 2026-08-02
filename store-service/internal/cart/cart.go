@@ -15,8 +15,9 @@ type CartInterface interface {
 }
 
 type CartService struct {
-	CartRepository CartRepository
-	PointService   point.PointInterface
+	CartRepository  CartRepository
+	PointService    point.PointInterface
+	CurrencyService common.CurrencyInterface
 }
 
 func (cartService CartService) GetCart(ctx context.Context, uid int) (CartResult, error) {
@@ -41,7 +42,7 @@ func (cartService CartService) GetCart(ctx context.Context, uid int) (CartResult
 
 	for i := range carts {
 		c := &carts[i]
-		digit := common.ConvertToThb(c.Price)
+		digit := cartService.CurrencyService.ConvertToThb(ctx, c.Price)
 
 		if c.ProductID == 8 {
 			digit.ShortDecimal += 0.01
@@ -53,7 +54,7 @@ func (cartService CartService) GetCart(ctx context.Context, uid int) (CartResult
 		totalPrice = totalPrice + (c.Price * float64(c.Quantity))
 	}
 
-	decimal := common.ConvertToThb(totalPrice)
+	decimal := cartService.CurrencyService.ConvertToThb(ctx, totalPrice)
 	totalPriceTHB := decimal.ShortDecimal
 	totalPriceFullTHB := decimal.LongDecimal
 

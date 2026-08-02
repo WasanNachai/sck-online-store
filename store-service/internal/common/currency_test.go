@@ -18,7 +18,7 @@ func Test_ConvertToThb_Input_123_Should_be_4424_Point_31_and_Point_305572(t *tes
 		LongDecimal:  4424.305572,
 	}
 
-	actual := common.ConvertToThb(123)
+	actual := common.ConvertToThb(123, common.DefaultUSDToTHBRate)
 
 	assert.Equal(t, expected.ShortDecimal, actual.ShortDecimal)
 	assert.Equal(t, expected.LongDecimal, actual.LongDecimal)
@@ -30,7 +30,7 @@ func Test_ConvertToThb_Input_0_Should_be_0(t *testing.T) {
 		LongDecimal:  0,
 	}
 
-	actual := common.ConvertToThb(0)
+	actual := common.ConvertToThb(0, common.DefaultUSDToTHBRate)
 
 	assert.Equal(t, expected.ShortDecimal, actual.ShortDecimal)
 	assert.Equal(t, expected.LongDecimal, actual.LongDecimal)
@@ -42,7 +42,7 @@ func Test_ConvertToThb_Input_Minus_123_Should_be_Minus_4424_Point_31_and_Point_3
 		LongDecimal:  -4424.305572,
 	}
 
-	actual := common.ConvertToThb(-123)
+	actual := common.ConvertToThb(-123, common.DefaultUSDToTHBRate)
 
 	assert.Equal(t, expected.ShortDecimal, actual.ShortDecimal)
 	assert.Equal(t, expected.LongDecimal, actual.LongDecimal)

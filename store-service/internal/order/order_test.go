@@ -121,6 +121,7 @@ func Test_CreateOrder_Input_Submitted_Order_Should_be_OrderNumber_26010695220010
 		ShippingRepository: mockShippingRepository,
 		OrderHelper:        mockOrderHelper,
 		Clock:              func() time.Time { return fixedTime },
+		CurrencyService:    mockCurrencyService{},
 	}
 
 	actual, err := orderService.CreateOrder(context.Background(), uid, submittedOrder)
@@ -292,6 +293,7 @@ func Test_CreateOrder_Input_Submitted_Order_Should_be_Return_Create_Order_Error(
 		ShippingRepository: mockShippingRepository,
 		OrderHelper:        mockOrderHelper,
 		Clock:              func() time.Time { return fixedTime },
+		CurrencyService:    mockCurrencyService{},
 	}
 
 	actual, err := orderService.CreateOrder(context.Background(), uid, submittedOrder)
@@ -397,6 +399,7 @@ func Test_CreateOrder_Input_Submitted_Order_Should_be_Return_Create_Shipping_Err
 		ShippingRepository: mockShippingRepository,
 		OrderHelper:        mockOrderHelper,
 		Clock:              func() time.Time { return fixedTime },
+		CurrencyService:    mockCurrencyService{},
 	}
 
 	actual, err := orderService.CreateOrder(context.Background(), uid, submittedOrder)
@@ -504,6 +507,7 @@ func Test_CreateOrder_Input_Submitted_Order_Should_be_Return_Create_Order_Produc
 		ShippingRepository: mockShippingRepository,
 		OrderHelper:        mockOrderHelper,
 		Clock:              func() time.Time { return fixedTime },
+		CurrencyService:    mockCurrencyService{},
 	}
 
 	actual, err := orderService.CreateOrder(context.Background(), uid, submittedOrder)
@@ -637,6 +641,7 @@ func Test_GetOrderSummary_Should_Return_One_Product_If_OrderNumber_is_2601069522
 	orderService := order.OrderService{
 		OrderRepository: mockOrderRepository,
 		UserRepository:  mockUserRepository,
+		CurrencyService: mockCurrencyService{},
 	}
 
 	actual, err := orderService.GetOrderSummary(context.Background(), orderNumber)
@@ -734,6 +739,7 @@ func Test_GetOrderSummary_Should_Return_Two_Products_If_OrderOrderNumber_is_2601
 	orderService := order.OrderService{
 		OrderRepository: mockOrderRepository,
 		UserRepository:  mockUserRepository,
+		CurrencyService: mockCurrencyService{},
 	}
 
 	actual, err := orderService.GetOrderSummary(context.Background(), orderNumber)

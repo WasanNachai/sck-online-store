@@ -46,6 +46,7 @@ func Test_GetProducts_Should_be_Return_Total_10031_and_Products_include_PriceTHB
 
 	productService := product.ProductService{
 		ProductRepository: mockProductRepository,
+		CurrencyService:   mockCurrencyService{},
 	}
 	actual, err := productService.GetProducts(context.Background(), keyword, limit, offset)
 
@@ -64,6 +65,7 @@ func Test_GetProducts_Should_be_Return_GetProducts_Error(t *testing.T) {
 
 	productService := product.ProductService{
 		ProductRepository: mockProductRepository,
+		CurrencyService:   mockCurrencyService{},
 	}
 	actual, err := productService.GetProducts(context.Background(), keyword, limit, offset)
 
@@ -98,6 +100,7 @@ func Test_GetProductByID_Should_be_Return_ProductDetail_ID_1_include_PriceTHB(t 
 
 	productService := product.ProductService{
 		ProductRepository: mockProductRepository,
+		CurrencyService:   mockCurrencyService{},
 	}
 	actual, err := productService.GetProductByID(context.Background(), pid)
 
@@ -114,6 +117,7 @@ func Test_GetProductByID_Should_be_Return_GetProductByID_Error(t *testing.T) {
 
 	productService := product.ProductService{
 		ProductRepository: mockProductRepository,
+		CurrencyService:   mockCurrencyService{},
 	}
 	actual, err := productService.GetProductByID(context.Background(), pid)
 

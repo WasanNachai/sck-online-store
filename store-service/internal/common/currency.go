@@ -2,13 +2,14 @@ package common
 
 import "math"
 
+const DefaultUSDToTHBRate = 35.969964
+
 type Decimal struct {
 	ShortDecimal float64 `json:"short_digit"`
 	LongDecimal  float64 `json:"long_digit"`
 }
 
-func ConvertToThb(amount float64) Decimal {
-	rate := 35.969964
+func ConvertToThb(amount, rate float64) Decimal {
 	result := amount * rate
 	factor2 := math.Pow(10, 2)
 	factor6 := math.Pow(10, 6)
