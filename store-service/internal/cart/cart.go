@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log/slog"
 	"store-service/internal/common"
+	"store-service/internal/point"
 )
 
 type CartInterface interface {
@@ -15,19 +16,33 @@ type CartInterface interface {
 
 type CartService struct {
 	CartRepository CartRepository
+	PointService   point.PointInterface
 }
 
 func (cartService CartService) GetCart(ctx context.Context, uid int) (CartResult, error) {
 	carts, err := cartService.CartRepository.GetCartDetail(ctx, uid)
 	if err != nil {
-		slog.ErrorContext(ctx, "CartRepository.GetCartDetail failed",
-			"log_type", "error", "error_code", "CART_QUERY_FAILED", "error_message", err.Error(), "user_id", uid)
+		slog.ErrorContext(
+			ctx,
+			"CartRepository.GetCartDetail failed",
+			"log_type", "error",
+			"error_code", "CART_QUERY_FAILED",
+			"error_message", err.Error(),
+			"user_id", uid,
+		)
+
+		return CartResult{
+			Carts:   []CartDetail{},
+			Summary: CartSummary{},
+		}, err
 	}
 
 	totalPrice := 0.0
+
 	for i := range carts {
 		c := &carts[i]
 		digit := common.ConvertToThb(c.Price)
+
 		if c.ProductID == 8 {
 			digit.ShortDecimal += 0.01
 			digit.LongDecimal += 0.01
@@ -46,19 +61,40 @@ func (cartService CartService) GetCart(ctx context.Context, uid int) (CartResult
 		return CartResult{
 			Carts:   []CartDetail{},
 			Summary: CartSummary{},
+		}, nil
+	}
+
+	receivePoint, err := cartService.PointService.CalculateEarnedPoints(
+		ctx,
+		totalPriceTHB,
+	)
+	if err != nil {
+		slog.ErrorContext(
+			ctx,
+			"PointService.CalculateEarnedPoints failed",
+			"log_type", "error",
+			"error_code", "POINT_CALCULATION_FAILED",
+			"error_message", err.Error(),
+			"user_id", uid,
+			"amount_thb", totalPriceTHB,
+		)
+
+		return CartResult{
+			Carts:   []CartDetail{},
+			Summary: CartSummary{},
 		}, err
 	}
+
 	return CartResult{
 		Carts: carts,
 		Summary: CartSummary{
 			TotalPrice:        totalPrice,
 			TotalPriceTHB:     totalPriceTHB,
 			TotalPriceFullTHB: totalPriceFullTHB,
-			ReceivePoint:      common.CalculatePoint(totalPriceTHB),
+			ReceivePoint:      receivePoint,
 		},
-	}, err
+	}, nil
 }
-
 func (cartService CartService) AddCart(ctx context.Context, uid int, submitedCart SubmitedCart) (CartResult, error) {
 	cart, err := cartService.CartRepository.GetCartByProductID(ctx, uid, submitedCart.ProductID)
 

@@ -20,3 +20,17 @@ func (gateway *mockPointGateway) CreatePoint(ctx context.Context, userID int, po
 	argument := gateway.Called(ctx, userID, pointItem)
 	return argument.Get(0).(point.Point), argument.Error(1)
 }
+
+func (m *mockPointGateway) CalculateEarnedPoints(
+	ctx context.Context,
+	amountTHB float64,
+) (point.CalculatePointResponse, error) {
+	args := m.Called(ctx, amountTHB)
+
+	var result point.CalculatePointResponse
+	if args.Get(0) != nil {
+		result = args.Get(0).(point.CalculatePointResponse)
+	}
+
+	return result, args.Error(1)
+}

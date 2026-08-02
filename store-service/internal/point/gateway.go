@@ -5,66 +5,234 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"strings"
+	"time"
 )
 
 type PointGateway struct {
 	PointEndpoint string
+	HTTPClient    *http.Client
 }
 
-func (gateway PointGateway) GetPoints(ctx context.Context, uid int) ([]Point, error) {
-	endPoint := gateway.PointEndpoint + "/api/v1/point"
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endPoint, nil)
-	if err != nil {
-		return []Point{}, err
-	}
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return []Point{}, err
-	}
-	if response.StatusCode != 200 {
-		return []Point{}, fmt.Errorf("response is not ok but it's %d", response.StatusCode)
-	}
-	responseData, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return []Point{}, err
+func (gateway PointGateway) getHTTPClient() *http.Client {
+	if gateway.HTTPClient != nil {
+		return gateway.HTTPClient
 	}
 
-	var PointGatewayResponse []Point
-	err = json.Unmarshal(responseData, &PointGatewayResponse)
-	if err != nil {
-		return []Point{}, err
+	return &http.Client{
+		Timeout: 3 * time.Second,
 	}
-
-	return PointGatewayResponse, nil
 }
 
-func (gateway PointGateway) CreatePoint(ctx context.Context, uid int, body Point) (Point, error) {
-	data, _ := json.Marshal(body)
-	endPoint := gateway.PointEndpoint + "/api/v1/point"
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endPoint, bytes.NewBuffer(data))
+func (gateway PointGateway) buildEndpoint(path string) string {
+	return strings.TrimRight(gateway.PointEndpoint, "/") + path
+}
+
+func (gateway PointGateway) GetPoints(
+	ctx context.Context,
+	uid int,
+) ([]Point, error) {
+	endpoint := gateway.buildEndpoint("/api/v1/point")
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		endpoint,
+		nil,
+	)
 	if err != nil {
-		return Point{}, err
+		return []Point{}, fmt.Errorf(
+			"create get-points request: %w",
+			err,
+		)
 	}
+
+	response, err := gateway.getHTTPClient().Do(req)
+	if err != nil {
+		return []Point{}, fmt.Errorf(
+			"call point-service get-points endpoint: %w",
+			err,
+		)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		responseBody, _ := io.ReadAll(response.Body)
+
+		return []Point{}, fmt.Errorf(
+			"point-service get-points returned status %d: %s",
+			response.StatusCode,
+			string(responseBody),
+		)
+	}
+
+	var gatewayResponse []Point
+
+	if err := json.NewDecoder(response.Body).Decode(
+		&gatewayResponse,
+	); err != nil {
+		return []Point{}, fmt.Errorf(
+			"decode get-points response: %w",
+			err,
+		)
+	}
+
+	return gatewayResponse, nil
+}
+
+func (gateway PointGateway) CreatePoint(
+	ctx context.Context,
+	uid int,
+	body Point,
+) (Point, error) {
+	data, err := json.Marshal(body)
+	if err != nil {
+		return Point{}, fmt.Errorf(
+			"marshal create-point request: %w",
+			err,
+		)
+	}
+
+	endpoint := gateway.buildEndpoint("/api/v1/point")
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		endpoint,
+		bytes.NewReader(data),
+	)
+	if err != nil {
+		return Point{}, fmt.Errorf(
+			"create point-service request: %w",
+			err,
+		)
+	}
+
 	req.Header.Set("Content-Type", "application/json")
-	response, err := http.DefaultClient.Do(req)
+	req.Header.Set("Accept", "application/json")
+
+	response, err := gateway.getHTTPClient().Do(req)
 	if err != nil {
-		return Point{}, err
+		return Point{}, fmt.Errorf(
+			"call point-service create-point endpoint: %w",
+			err,
+		)
 	}
-	if response.StatusCode != 200 && response.StatusCode != 201 {
-		return Point{}, fmt.Errorf("response is not ok but it's %d", response.StatusCode)
-	}
-	responseData, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return Point{}, err
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK &&
+		response.StatusCode != http.StatusCreated {
+		responseBody, _ := io.ReadAll(response.Body)
+
+		return Point{}, fmt.Errorf(
+			"point-service create-point returned status %d: %s",
+			response.StatusCode,
+			string(responseBody),
+		)
 	}
 
-	var PointGatewayResponse Point
-	err = json.Unmarshal(responseData, &PointGatewayResponse)
-	if err != nil {
-		return Point{}, err
+	var gatewayResponse Point
+
+	if err := json.NewDecoder(response.Body).Decode(
+		&gatewayResponse,
+	); err != nil {
+		return Point{}, fmt.Errorf(
+			"decode create-point response: %w",
+			err,
+		)
 	}
 
-	return PointGatewayResponse, nil
+	return gatewayResponse, nil
+}
+
+func (gateway PointGateway) CalculateEarnedPoints(
+	ctx context.Context,
+	amountTHB float64,
+) (CalculatePointResponse, error) {
+	if amountTHB <= 0 {
+		return CalculatePointResponse{
+			EarnedPoints:    0,
+			AmountTHB:       amountTHB,
+			RateTHBPerPoint: 50,
+		}, nil
+	}
+
+	if gateway.PointEndpoint == "" {
+		return CalculatePointResponse{},
+			fmt.Errorf("point-service endpoint is empty")
+	}
+
+	requestBody := CalculatePointRequest{
+		AmountTHB: amountTHB,
+	}
+
+	data, err := json.Marshal(requestBody)
+	if err != nil {
+		return CalculatePointResponse{}, fmt.Errorf(
+			"marshal calculate-point request: %w",
+			err,
+		)
+	}
+
+	endpoint := gateway.buildEndpoint(
+		"/api/v1/point/calculate",
+	)
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		endpoint,
+		bytes.NewReader(data),
+	)
+	if err != nil {
+		return CalculatePointResponse{}, fmt.Errorf(
+			"create calculate-point request: %w",
+			err,
+		)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	response, err := gateway.getHTTPClient().Do(req)
+	if err != nil {
+		return CalculatePointResponse{}, fmt.Errorf(
+			"call point-service calculate endpoint: %w",
+			err,
+		)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK &&
+		response.StatusCode != http.StatusCreated {
+		responseBody, _ := io.ReadAll(response.Body)
+
+		return CalculatePointResponse{}, fmt.Errorf(
+			"point-service calculate endpoint returned status %d: %s",
+			response.StatusCode,
+			string(responseBody),
+		)
+	}
+
+	var gatewayResponse CalculatePointResponse
+
+	if err := json.NewDecoder(response.Body).Decode(
+		&gatewayResponse,
+	); err != nil {
+		return CalculatePointResponse{}, fmt.Errorf(
+			"decode calculate-point response: %w",
+			err,
+		)
+	}
+
+	if gatewayResponse.EarnedPoints < 0 {
+		return CalculatePointResponse{}, fmt.Errorf(
+			"point-service returned invalid earned points: %d",
+			gatewayResponse.EarnedPoints,
+		)
+	}
+
+	return gatewayResponse, nil
 }

@@ -17,6 +17,13 @@ type mockPointInterface struct {
 	mock.Mock
 }
 
+func (mock *mockPointInterface) CalculateEarnedPoints(
+	ctx context.Context,
+	amountTHB float64,
+) (int, error) {
+	return 0, nil
+}
+
 func (service *mockPointInterface) TotalPoint(ctx context.Context, uid int) (point.TotalPoint, error) {
 	argument := service.Called(ctx, uid)
 	return argument.Get(0).(point.TotalPoint), argument.Error(1)

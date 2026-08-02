@@ -13,3 +13,13 @@ type Point struct {
 type TotalPoint struct {
 	Point int `json:"point"`
 }
+
+type CalculatePointRequest struct {
+	AmountTHB float64 `json:"amountTHB"`
+}
+
+type CalculatePointResponse struct {
+	EarnedPoints    int     `json:"earnedPoints"`
+	AmountTHB       float64 `json:"amountTHB"`
+	RateTHBPerPoint int     `json:"rateTHBPerPoint"`
+}

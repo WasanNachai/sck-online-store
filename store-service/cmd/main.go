@@ -11,12 +11,12 @@ import (
 	"store-service/internal/auth"
 	"store-service/internal/cart"
 	"store-service/internal/healthcheck"
-	"store-service/internal/middleware"
 	"store-service/internal/metrics"
-	storeOtel "store-service/internal/otel"
+	"store-service/internal/middleware"
 	"store-service/internal/order"
-	"store-service/internal/profiling"
+	storeOtel "store-service/internal/otel"
 	"store-service/internal/payment"
+	"store-service/internal/profiling"
 	"store-service/internal/shipping"
 	"store-service/internal/user"
 	"time"
@@ -26,9 +26,9 @@ import (
 
 	"github.com/XSAM/otelsql"
 	"github.com/gin-contrib/cors"
-	otelpyroscope "github.com/grafana/otel-profiling-go"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
+	otelpyroscope "github.com/grafana/otel-profiling-go"
 	"github.com/jmoiron/sqlx"
 	"go.opentelemetry.io/otel"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -160,6 +160,7 @@ func main() {
 	}
 	cartService := cart.CartService{
 		CartRepository: &cartRepository,
+		PointService:   &pointService,
 	}
 	productService := product.ProductService{
 		ProductRepository: &productRepository,
