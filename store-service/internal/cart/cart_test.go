@@ -166,7 +166,7 @@ func Test_AddCart_Input_Submitted_More_Product_Should_be_Have_2_Quantity_and_Rec
 		},
 		Summary: cart.CartSummary{
 			TotalPrice:        239.9,
-			TotalPriceTHB:     8629.19,
+			TotalPriceTHB:     8629.2,
 			TotalPriceFullTHB: 8629.194364,
 			ReceivePoint:      172,
 		},

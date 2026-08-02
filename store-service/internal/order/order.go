@@ -78,14 +78,16 @@ func (orderService OrderService) CreateOrder(ctx context.Context, uid int, submi
 		return Order{}, fmt.Errorf("There is no product in order, please try again")
 	}
 
-	subtotalPrice := 0.0
+	subtotalPriceTHB := 0.0
+	earnPoint := 0
 	for _, productSelected := range submitedOrder.Cart {
 		product, _ := orderService.ProductRepository.GetProductByID(ctx, productSelected.ProductID)
-		subtotalPrice = subtotalPrice + (product.Price * float64(productSelected.Quantity))
+		linePriceTHB := orderService.CurrencyService.ConvertToThb(ctx, product.Price).ShortDecimal
+		subtotalPriceTHB += linePriceTHB * float64(productSelected.Quantity)
+		earnPoint += common.CalculatePoint(linePriceTHB * float64(productSelected.Quantity))
 	}
 
-	subtotalPriceTHB := orderService.CurrencyService.ConvertToThb(ctx, subtotalPrice).LongDecimal
-	discountPriceTHB := orderService.CurrencyService.ConvertToThb(ctx, submitedOrder.DiscountPrice).LongDecimal
+	discountPriceTHB := orderService.CurrencyService.ConvertToThb(ctx, submitedOrder.DiscountPrice).ShortDecimal
 	totalPriceTHB := subtotalPriceTHB - discountPriceTHB
 
 	shippingDetail, _ := orderService.ShippingRepository.GetShippingMethodByID(ctx, submitedOrder.ShippingMethodID)
@@ -117,7 +119,7 @@ func (orderService OrderService) CreateOrder(ctx context.Context, uid int, submi
 		TotalPrice:       totalPriceTHB + shippingFeeTHB - float64(submitedOrder.BurnPoint),
 		ShippingFee:      shippingFeeTHB,
 		BurnPoint:        submitedOrder.BurnPoint,
-		EarnPoint:        common.CalculatePoint(totalPriceTHB - float64(submitedOrder.BurnPoint)),
+		EarnPoint:        earnPoint,
 	}
 
 	orderID, err := orderService.OrderRepository.CreateOrder(ctx, uid, orderDetail)

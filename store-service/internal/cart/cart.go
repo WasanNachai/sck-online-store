@@ -39,6 +39,9 @@ func (cartService CartService) GetCart(ctx context.Context, uid int) (CartResult
 	}
 
 	totalPrice := 0.0
+	totalPriceTHB := 0.0
+	totalPriceFullTHB := 0.0
+	receivePoint := 0
 
 	for i := range carts {
 		c := &carts[i]
@@ -52,38 +55,16 @@ func (cartService CartService) GetCart(ctx context.Context, uid int) (CartResult
 		c.PriceTHB = digit.ShortDecimal
 		c.PriceFullTHB = digit.LongDecimal
 		totalPrice = totalPrice + (c.Price * float64(c.Quantity))
+		totalPriceTHB += digit.ShortDecimal * float64(c.Quantity)
+		totalPriceFullTHB += digit.LongDecimal * float64(c.Quantity)
+		receivePoint += common.CalculatePoint(digit.ShortDecimal * float64(c.Quantity))
 	}
-
-	decimal := cartService.CurrencyService.ConvertToThb(ctx, totalPrice)
-	totalPriceTHB := decimal.ShortDecimal
-	totalPriceFullTHB := decimal.LongDecimal
 
 	if len(carts) == 0 {
 		return CartResult{
 			Carts:   []CartDetail{},
 			Summary: CartSummary{},
 		}, nil
-	}
-
-	receivePoint, err := cartService.PointService.CalculateEarnedPoints(
-		ctx,
-		totalPriceTHB,
-	)
-	if err != nil {
-		slog.ErrorContext(
-			ctx,
-			"PointService.CalculateEarnedPoints failed",
-			"log_type", "error",
-			"error_code", "POINT_CALCULATION_FAILED",
-			"error_message", err.Error(),
-			"user_id", uid,
-			"amount_thb", totalPriceTHB,
-		)
-
-		return CartResult{
-			Carts:   []CartDetail{},
-			Summary: CartSummary{},
-		}, err
 	}
 
 	return CartResult{
