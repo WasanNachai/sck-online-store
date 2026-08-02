@@ -64,7 +64,8 @@
 				{
 					"listen": "test",
 					"script": {
-						"exec": [
+						"exec": [line-store\atdd\api\sck-online-store.postman_collection.json
+						ต้องการ updload  folder เข้าใน post man แต่มันขึ้น incorrect
 							"pm.test(\"check product detail should return status code 200\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",

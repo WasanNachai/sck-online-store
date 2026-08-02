@@ -202,4 +202,5 @@ robot atdd/ui/shopping_cart_success.robot
 ```
 make run_robot
 ```
-
+point
+```
