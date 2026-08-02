@@ -1,0 +1,329 @@
+{
+  "info": {
+    "_postman_id": "2f8d12a9-7b9c-4f7f-89f8-9fa0cb562112",
+    "name": "003-Loyalty-Point-Lifecycle",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Loyalty point lifecycle tests: pending approval, approval, redeemed, expired and summary."
+  },
+  "item": [
+    {
+      "name": "TSS-POINT-001",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "pm.test(\"access_token should exist\", function () {",
+                  "  pm.expect(jsonData.access_token).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.variables.set(\"access_token\", jsonData.access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{STORE_SERVICE_URL}}/api/v1/login",
+              "host": [
+                "{{STORE_SERVICE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Pending Earn Point",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200 or 201\", function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "pm.test(\"Point entry should be pending approval\", function () {",
+                  "  pm.expect(jsonData.status).to.eql(\"pending_approval\");",
+                  "});",
+                  "",
+                  "pm.variables.set(\"pending_point_id\", jsonData.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_number\": {{order_number}},\n  \"amount\": {{pending_earned_point}},\n  \"expire_date\": \"{{expire_date}}\"\n}"
+            },
+            "url": {
+              "raw": "{{STORE_SERVICE_URL}}/api/v1/point/earn/pending",
+              "host": [
+                "{{STORE_SERVICE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "point",
+                "earn",
+                "pending"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Pending Point",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "pm.test(\"Point status should be approved\", function () {",
+                  "  pm.expect(jsonData.status).to.eql(\"approved\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{STORE_SERVICE_URL}}/api/v1/point/{{pending_point_id}}/approve",
+              "host": [
+                "{{STORE_SERVICE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "point",
+                "{{pending_point_id}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Point Summary",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "pm.test(\"Summary response should contain required fields\", function () {",
+                  "  pm.expect(jsonData).to.have.property(\"available_points\");",
+                  "  pm.expect(jsonData).to.have.property(\"pending_points\");",
+                  "  pm.expect(jsonData).to.have.property(\"redeemed_points\");",
+                  "  pm.expect(jsonData).to.have.property(\"expired_points\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{STORE_SERVICE_URL}}/api/v1/point/summary",
+              "host": [
+                "{{STORE_SERVICE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "point",
+                "summary"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Redeem Approved Point",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "pm.test(\"Point status should be redeemed\", function () {",
+                  "  pm.expect(jsonData.status).to.eql(\"redeemed\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{STORE_SERVICE_URL}}/api/v1/point/{{pending_point_id}}/redeem",
+              "host": [
+                "{{STORE_SERVICE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "point",
+                "{{pending_point_id}}",
+                "redeem"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Expire Points by Date",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "pm.test(\"Response should contain expired_count\", function () {",
+                  "  pm.expect(jsonData).to.have.property(\"expired_count\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"before_date\": \"{{expire_before_date}}\"\n}"
+            },
+            "url": {
+              "raw": "{{STORE_SERVICE_URL}}/api/v1/point/expire",
+              "host": [
+                "{{STORE_SERVICE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "point",
+                "expire"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

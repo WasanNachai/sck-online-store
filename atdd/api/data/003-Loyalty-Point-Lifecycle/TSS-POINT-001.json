@@ -1,0 +1,12 @@
+[
+  {
+    "username": "user_4",
+    "password": "P@ssw0rd",
+    "access_token": null,
+    "order_number": 2608020100101,
+    "pending_earned_point": 50,
+    "expire_date": "2027-08-02T00:00:00Z",
+    "expire_before_date": "2026-12-31T23:59:59Z",
+    "pending_point_id": null
+  }
+]

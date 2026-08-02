@@ -28,6 +28,35 @@ type PointInterface interface {
 		ctx context.Context,
 		amountTHB float64,
 	) (int, error)
+
+	GetPointSummary(
+		ctx context.Context,
+		uid int,
+	) (PointSummary, error)
+
+	CreatePendingEarnPoint(
+		ctx context.Context,
+		uid int,
+		submittedPoint SubmitedPendingEarnPoint,
+	) (Point, error)
+
+	ApprovePoint(
+		ctx context.Context,
+		uid int,
+		pointID int,
+	) (Point, error)
+
+	RedeemPoint(
+		ctx context.Context,
+		uid int,
+		pointID int,
+	) (Point, error)
+
+	ExpirePoints(
+		ctx context.Context,
+		uid int,
+		submittedPoint SubmitedExpirePoint,
+	) (ExpirePointResponse, error)
 }
 
 type PointService struct {
@@ -50,6 +79,34 @@ type PointGatewayInterface interface {
 		ctx context.Context,
 		amountTHB float64,
 	) (CalculatePointResponse, error)
+
+	GetPointSummary(
+		ctx context.Context,
+		uid int,
+	) (PointServiceSummary, error)
+
+	CreatePendingEarnPoint(
+		ctx context.Context,
+		uid int,
+		body CreatePendingPointRequest,
+	) (Point, error)
+
+	ApprovePoint(
+		ctx context.Context,
+		pointID int,
+		body PointTransitionRequest,
+	) (Point, error)
+
+	RedeemPoint(
+		ctx context.Context,
+		pointID int,
+		body PointTransitionRequest,
+	) (Point, error)
+
+	ExpirePoints(
+		ctx context.Context,
+		body ExpirePointRequest,
+	) (ExpirePointResponse, error)
 }
 
 func (pointService PointService) TotalPoint(
@@ -155,11 +212,10 @@ func (pointService PointService) CalculateEarnedPoints(
 	ctx context.Context,
 	amountTHB float64,
 ) (int, error) {
-	response, err :=
-		pointService.PointGateway.CalculateEarnedPoints(
-			ctx,
-			amountTHB,
-		)
+	response, err := pointService.PointGateway.CalculateEarnedPoints(
+		ctx,
+		amountTHB,
+	)
 
 	if err != nil {
 		slog.ErrorContext(
@@ -175,4 +231,85 @@ func (pointService PointService) CalculateEarnedPoints(
 	}
 
 	return response.EarnedPoints, nil
+}
+
+func (pointService PointService) GetPointSummary(
+	ctx context.Context,
+	uid int,
+) (PointSummary, error) {
+	res, err := pointService.PointGateway.GetPointSummary(ctx, uid)
+	if err != nil {
+		return PointSummary{}, err
+	}
+
+	return PointSummary{
+		AvailablePoints: res.AvailablePoints,
+		PendingPoints:   res.PendingPoints,
+		RedeemedPoints:  res.RedeemedPoints,
+		ExpiredPoints:   res.ExpiredPoints,
+	}, nil
+}
+
+func (pointService PointService) CreatePendingEarnPoint(
+	ctx context.Context,
+	uid int,
+	submittedPoint SubmitedPendingEarnPoint,
+) (Point, error) {
+	request := CreatePendingPointRequest{
+		OrgID:      1,
+		UserID:     uid,
+		Amount:     submittedPoint.Amount,
+		ExpireDate: submittedPoint.ExpireDate,
+	}
+
+	return pointService.PointGateway.CreatePendingEarnPoint(
+		ctx,
+		uid,
+		request,
+	)
+}
+
+func (pointService PointService) ApprovePoint(
+	ctx context.Context,
+	uid int,
+	pointID int,
+) (Point, error) {
+	request := PointTransitionRequest{
+		UserID: uid,
+	}
+
+	return pointService.PointGateway.ApprovePoint(
+		ctx,
+		pointID,
+		request,
+	)
+}
+
+func (pointService PointService) RedeemPoint(
+	ctx context.Context,
+	uid int,
+	pointID int,
+) (Point, error) {
+	request := PointTransitionRequest{
+		UserID: uid,
+	}
+
+	return pointService.PointGateway.RedeemPoint(
+		ctx,
+		pointID,
+		request,
+	)
+}
+
+func (pointService PointService) ExpirePoints(
+	ctx context.Context,
+	uid int,
+	submittedPoint SubmitedExpirePoint,
+) (ExpirePointResponse, error) {
+	request := ExpirePointRequest{
+		BeforeDate: submittedPoint.BeforeDate,
+		UserID:     uid,
+	}
+
+	return pointService.PointGateway.ExpirePoints(ctx, request)
 }

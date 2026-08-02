@@ -164,9 +164,10 @@ func main() {
 	pointService := point.PointService{
 		PointGateway: &pointGateway,
 	}
+	paymentService.PointService = &pointService
 	cartService := cart.CartService{
-		CartRepository: &cartRepository,
-		PointService:   &pointService,
+		CartRepository:  &cartRepository,
+		PointService:    &pointService,
 		CurrencyService: currencyService,
 	}
 	productService := product.ProductService{
@@ -261,6 +262,11 @@ func main() {
 
 	protected.GET("/point", pointAPI.TotalPointHandler)
 	protected.POST("/point", pointAPI.DeductPointHandler)
+	protected.GET("/point/summary", pointAPI.PointSummaryHandler)
+	protected.POST("/point/earn/pending", pointAPI.CreatePendingEarnPointHandler)
+	protected.PATCH("/point/:id/approve", pointAPI.ApprovePointHandler)
+	protected.PATCH("/point/:id/redeem", pointAPI.RedeemPointHandler)
+	protected.PATCH("/point/expire", pointAPI.ExpirePointHandler)
 
 	//docs.SwaggerInfo.BasePath = "/api/v1"
 	route.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
