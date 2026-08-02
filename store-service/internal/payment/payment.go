@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"store-service/internal/metrics"
 	"store-service/internal/order"
+	"store-service/internal/point"
 	"store-service/internal/product"
 	"store-service/internal/shipping"
 	"time"
@@ -23,6 +24,7 @@ type PaymentService struct {
 	ShippingGateway   ShippingGatewayInterface
 	OrderRepository   order.OrderRepository
 	ProductRepository product.ProductRepository
+	PointService      PointServiceInterface
 }
 
 type BankGatewayInterface interface {
@@ -32,6 +34,14 @@ type BankGatewayInterface interface {
 
 type ShippingGatewayInterface interface {
 	GetTrackingNumber(ctx context.Context, shippingGatewaySubmit shipping.ShippingGatewaySubmit) (string, error)
+}
+
+type PointServiceInterface interface {
+	CreatePendingEarnPoint(
+		ctx context.Context,
+		uid int,
+		submittedPoint point.SubmitedPendingEarnPoint,
+	) (point.Point, error)
 }
 
 func (service PaymentService) ConfirmPayment(ctx context.Context, uid int, submitedPayment SubmitedPayment) (SubmitedPaymentResponse, error) {
@@ -161,6 +171,24 @@ func (service PaymentService) ConfirmPayment(ctx context.Context, uid int, submi
 		slog.Any("after", map[string]any{"tracking_number": trackingNumber}),
 		slog.Any("changed_fields", []string{"tracking_number"}),
 	)
+
+	if service.PointService != nil && orderDetail.EarnPoint > 0 {
+		_, err = service.PointService.CreatePendingEarnPoint(
+			ctx,
+			uid,
+			point.SubmitedPendingEarnPoint{
+				OrderNumber: orderDetail.OrderNumber,
+				Amount:      orderDetail.EarnPoint,
+				ExpireDate:  now.AddDate(1, 0, 0).Format(time.RFC3339),
+			},
+		)
+		if err != nil {
+			slog.ErrorContext(ctx, "PointService.CreatePendingEarnPoint failed",
+				"log_type", "error", "error_code", "POINT_PENDING_CREATE_FAILED", "error_message", err.Error(),
+				"user_id", uid, "order_number", orderNumber, "earn_point", orderDetail.EarnPoint)
+			return SubmitedPaymentResponse{}, err
+		}
+	}
 
 	if metrics.PaymentAttempts != nil {
 		metrics.PaymentAttempts.Add(ctx, 1,

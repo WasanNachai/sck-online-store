@@ -17,8 +17,12 @@ CREATE TABLE points (
     org_id BIGINT,
     user_id int,
     amount int,
+    status ENUM('pending_approval', 'approved', 'redeemed', 'expired') NOT NULL DEFAULT 'approved',
+    expire_date DATETIME NULL,
     created timestamp DEFAULT current_timestamp,
     updated timestamp DEFAULT current_timestamp ON UPDATE current_timestamp,
     PRIMARY KEY (id),
-    FOREIGN KEY (org_id) REFERENCES organizations(id)
+    FOREIGN KEY (org_id) REFERENCES organizations(id),
+    INDEX idx_points_user_status (user_id, status),
+    INDEX idx_points_status_expire_date (status, expire_date)
 ) CHARACTER SET utf8 COLLATE utf8_general_ci;

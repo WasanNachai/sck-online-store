@@ -5,10 +5,19 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  Param,
+  ParseIntPipe,
+  Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { PointService } from './point.service';
-import { CreatePointDto } from './point.dto';
+import {
+  CreatePendingEarnPointDto,
+  CreatePointDto,
+  ExpirePointDto,
+  TransitionPointDto,
+} from './point.dto';
 import { CalculatePointDto } from './calculate-point.dto';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 
@@ -21,7 +30,7 @@ export class PointController {
   constructor(private readonly pointService: PointService) {}
 
   @Get()
-  async getPoint() {
+  async getPoint(@Query('userId') userId?: string) {
     this.logger.log('GET /point request received');
 
     otelLogger.emit({
@@ -36,7 +45,14 @@ export class PointController {
     });
 
     try {
-      return await this.pointService.getPoint();
+      const parsedUserID = userId ? Number(userId) : undefined;
+      if (userId && Number.isNaN(parsedUserID)) {
+        throw new HttpException(
+          'userId must be a valid number',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      return await this.pointService.getPoint(parsedUserID);
     } catch (error: any) {
       this.logger.error(
         'PointService.getPoint internal error',
@@ -57,6 +73,48 @@ export class PointController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  @Get('summary/:userId')
+  async getPointSummary(
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.pointService.getPointSummary(userId);
+  }
+
+  @Post('earn-pending')
+  async createPendingPoint(
+    @Body() body: CreatePendingEarnPointDto,
+  ) {
+    return this.pointService.createPendingEarnPoint(body);
+  }
+
+  @Patch(':id/approve')
+  async approvePoint(
+    @Param('id', ParseIntPipe) pointId: number,
+    @Body() body: TransitionPointDto,
+  ) {
+    return this.pointService.approvePoint(pointId, body.userId);
+  }
+
+  @Patch(':id/redeem')
+  async redeemPoint(
+    @Param('id', ParseIntPipe) pointId: number,
+    @Body() body: TransitionPointDto,
+  ) {
+    return this.pointService.redeemPoint(pointId, body.userId);
+  }
+
+  @Patch('expire')
+  async expirePoint(@Body() body: ExpirePointDto) {
+    const expiredCount = await this.pointService.expirePoints(
+      new Date(body.beforeDate),
+      body.userId,
+    );
+
+    return {
+      expiredCount,
+    };
   }
 
   @Post()
