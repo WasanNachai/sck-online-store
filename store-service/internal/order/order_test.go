@@ -90,7 +90,7 @@ func Test_CreateOrder_Input_Submitted_Order_Should_be_OrderNumber_26010695220010
 		TotalPrice:       515.8110340000001,
 		ShippingFee:      50,
 		BurnPoint:        0,
-		EarnPoint:        4,
+		EarnPoint:        9,
 	}
 
 	mockOrderRepository.On("CreateOrder", mock.Anything, uid, orderDetail).Return(oid, nil)
@@ -282,7 +282,7 @@ func Test_CreateOrder_Input_Submitted_Order_Should_be_Return_Create_Order_Error(
 		TotalPrice:       515.8110340000001,
 		ShippingFee:      50,
 		BurnPoint:        0,
-		EarnPoint:        4,
+		EarnPoint:        9,
 	}
 	mockOrderRepository.On("CreateOrder", mock.Anything, uid, orderDetail).Return(oid, errors.New("CreateOrder Error"))
 
@@ -374,7 +374,7 @@ func Test_CreateOrder_Input_Submitted_Order_Should_be_Return_Create_Shipping_Err
 		TotalPrice:       515.8110340000001,
 		ShippingFee:      50,
 		BurnPoint:        0,
-		EarnPoint:        4,
+		EarnPoint:        9,
 	}
 
 	mockOrderRepository.On("CreateOrder", mock.Anything, uid, orderDetail).Return(oid, nil)
@@ -480,7 +480,7 @@ func Test_CreateOrder_Input_Submitted_Order_Should_be_Return_Create_Order_Produc
 		TotalPrice:       515.8110340000001,
 		ShippingFee:      50,
 		BurnPoint:        0,
-		EarnPoint:        4,
+		EarnPoint:        9,
 	}
 
 	mockOrderRepository.On("CreateOrder", mock.Anything, uid, orderDetail).Return(oid, nil)

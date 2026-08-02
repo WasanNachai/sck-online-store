@@ -114,10 +114,10 @@ func (orderService OrderService) CreateOrder(ctx context.Context, uid int, submi
 		PaymentMethodID:  submitedOrder.PaymentMethodID,
 		SubTotalPrice:    subtotalPriceTHB,
 		DiscountPrice:    discountPriceTHB,
-		TotalPrice:       totalPriceTHB + shippingFeeTHB,
+		TotalPrice:       totalPriceTHB + shippingFeeTHB - float64(submitedOrder.BurnPoint),
 		ShippingFee:      shippingFeeTHB,
 		BurnPoint:        submitedOrder.BurnPoint,
-		EarnPoint:        common.CalculatePoint(totalPriceTHB),
+		EarnPoint:        common.CalculatePoint(totalPriceTHB - float64(submitedOrder.BurnPoint)),
 	}
 
 	orderID, err := orderService.OrderRepository.CreateOrder(ctx, uid, orderDetail)
