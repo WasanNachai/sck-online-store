@@ -97,6 +97,7 @@ func (api OrderAPI) SubmitOrderHandler(context *gin.Context) {
 }
 
 func (api OrderAPI) GetOrderSummaryHandler(context *gin.Context) {
+	uid := context.GetInt("userID")
 	acceptHeader := context.GetHeader("Accept")
 	allowedHeaders := []string{"application/pdf", "", "*/*", "application/json"}
 	isAllowed := false
