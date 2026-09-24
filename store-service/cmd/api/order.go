@@ -131,7 +131,7 @@ func (api OrderAPI) GetOrderSummaryHandler(context *gin.Context) {
 				"log_type", "error",
 				"error_code", "ORDER_NOT_FOUND",
 				"error_message", err.Error(),
-				"user_id", 0,
+				"user_id", uid,
 				slog.Any("request", map[string]any{"order_number": orderNumber}),
 			)
 			context.JSON(http.StatusNotFound, gin.H{
@@ -143,7 +143,7 @@ func (api OrderAPI) GetOrderSummaryHandler(context *gin.Context) {
 			"log_type", "error",
 			"error_code", "ORDER_SUMMARY_FAILED",
 			"error_message", err.Error(),
-			"user_id", 0,
+			"user_id", uid,
 			slog.Any("request", map[string]any{"order_number": orderNumber}),
 		)
 		context.JSON(http.StatusInternalServerError, gin.H{
@@ -163,7 +163,7 @@ func (api OrderAPI) GetOrderSummaryHandler(context *gin.Context) {
 			"log_type", "error",
 			"error_code", "PDF_GENERATION_FAILED",
 			"error_message", err.Error(),
-			"user_id", 0,
+			"user_id", uid,
 			slog.Any("request", map[string]any{"order_number": orderNumber}),
 		)
 		context.JSON(http.StatusInternalServerError, gin.H{
